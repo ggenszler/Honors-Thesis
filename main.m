@@ -20,7 +20,7 @@
 
 %% Parameters
 % **Default Values for User Inputs**
-orbits = 9;                     % number of orbits
+orbits = 2; % 9;                     % number of orbits
 inclination = 0;                % inclination angle of main satellite; rad
 lMax = 100*10^3;                % total tether length; m
 m2 = 170;                       % sub satellite mass; kg
@@ -114,18 +114,18 @@ dphiDot_dt=@(TIMEU4,MASSU4,GAMMAU4,BETAU4,L0U4,L1U4,THETA_NU4,THETA_DNU4,PHI_NU4
 [x1,y1,z1,x2,y2,z2] = satellite_coord(time,gamma,theta0,phi0,R0,l0,inclination);
 % calculates the position of the two satellites in the global Cartesian Coordinate System
 
-%% Tensile Testing
-[tension,stress] = tension_stress(m2,mass,gamma,beta,l0,l2,theta0,theta1,phi0,phi1,w0,W0,inclination,R0,r,rho0,b,he,CMD,CmA,A);
-% calculates the tension and stress in the tether
-
-message = sprintf('The maximum stress is %d Pa', max(stress));
-msgbox(message);
-% outputs the maximum stress in a dialogue box
+% %% Tensile Testing
+% [tension,stress] = tension_stress(m2,mass,gamma,beta,l0,l2,theta0,theta1,phi0,phi1,w0,W0,inclination,R0,r,rho0,b,he,CMD,CmA,A);
+% % calculates the tension and stress in the tether
+% 
+% message = sprintf('The maximum stress is %d Pa', max(stress));
+% msgbox(message);
+% % outputs the maximum stress in a dialogue box
 
 %% Figures
-% figure (1)
-% plot_tether(time,l0,l1,inclination,lMax)
-% % graphs tether length and tether deployment rate and saves it as a .jpg
+figure (1)
+plot_tether(time,l0,l1,inclination,lMax)
+% graphs tether length and tether deployment rate and saves it as a .jpg
 % 
 % figure (2)
 % plot_pitch(time,theta0,inclination,lMax)
