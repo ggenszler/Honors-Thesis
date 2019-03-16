@@ -1,17 +1,23 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Grace Genszler                                                    %
-% Last Updated: Friday, February 16th, 2018                         %
+% Last Updated: Sunday, March 25th, 2018                            %
 % Solves the instantaneous mass, tether length, and tether          %
 % deployment rates for each time step                               %
 %                                                                   %
 % Inputs:                                                           %
 %   -t: blank time vector                                           %
 %   -h: time step                                                   %
-%   -u, v: blank tether length and tether deployment rate vectors   %
+%   -u: blank tether length vecto                                   %
+%   -v: blank tether deployment rate vector                         %
+%   -w: blank tether acceleration vector                            %
 %                                                                   %
 % Outputs:                                                          %
 %   -m: mass vector                                                 %
-%   -u, v: tether length and tether deployment rate vectors         %
+%   -g: true anomaly vector                                         %
+%   -b: -90deg offset from true anomaly vector                      %
+%   -u: tether length vector                                        %
+%   -v: tether deployment rate vector                               %
+%   -w: tether acceleration rate vector                             %
 %                                                                   %
 % To Do:                                                            %
 %   -NA                                                             %
@@ -21,40 +27,44 @@
 %                                                                   %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [m,u,v,g,t]=tether_mass_trueAnomaly(t,h,m,u,v,g,w0)
-alpha = 5*10^-4;    % tether deployment constant for l < 10km && l > 90km
-c = 5;              % tether deployment constant for 10km < l < 90km
-l0 = 10;            % initial tether length
-la = 10^4;          % tether length max for phase 1
-lb = 9*10^4;        % tether length max for phase 2
-lc = 9.999*10^4;    % tether length max for phase 3
-%t1 = 13815.7;      % time in s to reach phase 1 max
-K1 = 5.9078*10^4;   % exponential rate of growht constant for phase 1
-%t2 = 18000;        % time in s to reach phase 3 max
-K2 = 2.9811*10^10;  % exponential rate of decay constant for phase 3
+function [m,u,v,w,g,b,t]=tether_mass_trueAnomaly(t,h,m,u,v,w,g,b,w0,alpha,c,lMax,mMax)
+l0 = 10;                                                            % initial tether length
+la = 10^4;                                                       % tether length max for phase 1
+lb = lMax - 10^4;                                                       % tether length max for phase 2
+lc = lMax - l0;                                                     % tether length max for phase 3
+K1 = -(la - c*log(la/l0)/alpha);                                    % integration constant for phase 2
+K2 = ((lc + l0 - lb)*exp(alpha*(lb - la + c*log(la/l0)/alpha)/c));	% integration constant for phase 3
 
-for i = 1:length(t)-1 
-    % solves for new instantaneous mass
-    m(i+1) = m(i)*v(i)/u(i);
-
-    % solves parent function and first derivative for tether length
-    if u(i) < la
-        u(i+1) = l0*exp(alpha*t(i));
-        v(i+1) = alpha*u(i);
-    elseif la <= u(i) && u(i) < lb
-        u(i+1) = c*t(i) - K1;
-        v(i+1) = c;
-    elseif lb <= u(i) && u(i) < lc
-        u(i+1) = lc + l0 - K2*exp(-alpha*t(i));
-        v(i+1) = alpha*(lc + l0 - u(i));
+for i = 2:length(t) 
+    % steps forward in time
+    t(i) = t(i-1) + h;
+    
+    % solves parent function, first, and second derivatives for tether length
+    if u(i-1) < la
+        u(i) = l0*exp(alpha*t(i));
+        v(i) = alpha*u(i);
+        w(i) = alpha^2*u(i);
+    elseif la <= u(i-1) && u(i-1) < lb
+        u(i) = c*t(i) - K1;
+        v(i) = c;
+        w(i) = 0;
+    elseif lb <= u(i-1) && u(i-1) < lc        
+        u(i) = lc + l0 - K2*exp(-alpha*t(i));
+        v(i) = alpha*(lc + l0 - u(i));
+        w(i) = -K2*alpha^2*exp(-alpha*t(i));
     else
-        u(i+1) = 10^5;
-        v(i+1) = 0;
+        u(i) = lMax;
+        v(i) = 0;
+        w(i) = 0;
     end
     
-    g(i+1) = w0*t(i);
+    % solves for new instantaneous mass
+    m(i) = mMax*u(i)/lMax;
     
-    % steps forward in time
-    t(i+1) = t(i) + h;
+    % solves for true anomaly
+    g(i) = w0*t(i);
+    
+    % solves -90deg offset from true anomaly 
+    b(i) = g(i) - pi/2;
 end
 end
